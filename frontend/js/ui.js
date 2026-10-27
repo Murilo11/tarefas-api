@@ -1,4 +1,8 @@
 const el = {
+  formulario: document.querySelector("#formulario"),
+  campo: document.querySelector("#campo-titulo"),
+  botaoAnotar: document.querySelector("#botao-anotar"),
+  avisoCampo: document.querySelector("#aviso-campo"),
   lista: document.querySelector("#lista"),
   esqueleto: document.querySelector("#esqueleto"),
   vazio: document.querySelector("#vazio"),
@@ -17,6 +21,8 @@ const formatadorData = new Intl.DateTimeFormat("pt-BR", {
   day: "numeric",
   month: "long",
 });
+
+const temporizadores = new WeakMap();
 
 export function definirData() {
   const texto = formatadorData.format(new Date());
@@ -41,7 +47,7 @@ export function atualizarResumo(tarefas) {
     return;
   }
 
-  el.resumo.textContent = `${concluidas} de ${total} concluídas`;
+  el.resumo.textContent = `${concluidas} de ${total} ${total === 1 ? "concluída" : "concluídas"}`;
 }
 
 export function mostrarCarregando() {
@@ -90,17 +96,146 @@ export function renderizarTarefas(tarefas) {
   el.lista.hidden = false;
   el.vazio.hidden = true;
   atualizarResumo(tarefas);
+  anunciar(tarefas.length === 1 ? "1 tarefa carregada." : `${tarefas.length} tarefas carregadas.`);
+}
+
+export function adicionarTarefa(tarefa, tarefas) {
+  el.vazio.hidden = true;
+  el.erro.hidden = true;
+  el.lista.hidden = false;
+  el.lista.append(criarItem(tarefa));
+  atualizarResumo(tarefas);
+  anunciar("Tarefa anotada.");
+}
+
+export function mostrarVazio() {
+  el.lista.replaceChildren();
+  el.lista.hidden = true;
+  el.esqueleto.hidden = true;
+  el.erro.hidden = true;
+  el.vazio.hidden = false;
+  atualizarResumo([]);
+  anunciar("Nenhuma tarefa anotada.");
+}
+
+export function mostrarAviso(mensagem) {
+  el.avisoLista.textContent = mensagem;
+  el.avisoLista.hidden = false;
+}
+
+export function limparAviso() {
+  el.avisoLista.textContent = "";
+  el.avisoLista.hidden = true;
+}
+
+export function mostrarErroCampo(mensagem) {
+  el.avisoCampo.textContent = mensagem;
+  el.avisoCampo.classList.add("aviso-campo--erro");
+  el.campo.setAttribute("aria-invalid", "true");
+}
+
+export function limparErroCampo() {
+  el.avisoCampo.textContent = "";
+  el.avisoCampo.classList.remove("aviso-campo--erro");
+  el.campo.removeAttribute("aria-invalid");
+}
+
+export function limparCampo() {
+  el.campo.value = "";
+}
+
+export function lerTitulo() {
+  return el.campo.value.trim();
+}
+
+export function focarCampo() {
+  el.campo.focus();
+}
+
+export function definirCriando(ativo) {
+  el.botaoAnotar.disabled = ativo;
+  el.botaoAnotar.textContent = ativo ? "Anotando…" : "Anotar";
+  el.formulario.setAttribute("aria-busy", String(ativo));
+}
+
+export function aplicarConclusao(tarefa) {
+  const item = itemPorId(tarefa.id);
+  if (!item) return;
+
+  const campo = item.querySelector(".tarefa__campo");
+  campo.setAttribute("aria-checked", "true");
+  campo.disabled = true;
+  campo.setAttribute("aria-label", `Tarefa concluída: ${tarefa.titulo}`);
+  item.classList.add("tarefa--concluida");
+  anunciar("Tarefa concluída.");
+}
+
+export async function animarSaida(id) {
+  const item = itemPorId(id);
+  if (!item) return;
+
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    item.classList.add("tarefa--saindo");
+    await new Promise((resolver) => setTimeout(resolver, 170));
+  }
+
+  item.remove();
+}
+
+export function restaurarExcluir(botao) {
+  botao.disabled = false;
+  botao.textContent = "Excluir";
+  cancelarConfirmacao(botao);
+  botao.setAttribute("aria-label", `Excluir tarefa: ${tituloDoItem(botao)}`);
+}
+
+export function iniciarInterface({ aoCriar, aoConcluir, aoExcluir, aoTentarNovamente }) {
+  el.formulario.addEventListener("submit", (evento) => {
+    evento.preventDefault();
+    const titulo = el.campo.value.trim();
+
+    if (!titulo) {
+      mostrarErroCampo("Escreva algo antes de anotar.");
+      el.campo.focus();
+      return;
+    }
+
+    aoCriar(titulo);
+  });
+
+  el.campo.addEventListener("input", limparErroCampo);
+
+  el.lista.addEventListener("click", (evento) => {
+    const campo = evento.target.closest(".tarefa__campo");
+    if (campo && campo.getAttribute("aria-checked") !== "true") {
+      aoConcluir(Number(campo.closest(".tarefa").dataset.id), campo);
+      return;
+    }
+
+    const botao = evento.target.closest(".tarefa__excluir");
+    if (!botao) return;
+
+    if (botao.dataset.confirmando === "true") {
+      cancelarConfirmacao(botao);
+      botao.disabled = true;
+      aoExcluir(Number(botao.closest(".tarefa").dataset.id), botao);
+      return;
+    }
+
+    pedirConfirmacao(botao);
+  });
+
+  el.botaoTentar.addEventListener("click", () => aoTentarNovamente?.());
 }
 
 function criarItem(tarefa) {
   const item = el.modelo.content.firstElementChild.cloneNode(true);
   item.dataset.id = String(tarefa.id);
 
-  const titulo = item.querySelector(".tarefa__titulo");
-  titulo.textContent = tarefa.titulo;
+  item.querySelector(".tarefa__titulo").textContent = tarefa.titulo;
 
   const campo = item.querySelector(".tarefa__campo");
-  campo.checked = Boolean(tarefa.concluida);
+  campo.setAttribute("aria-checked", String(Boolean(tarefa.concluida)));
   campo.disabled = Boolean(tarefa.concluida);
   campo.setAttribute(
     "aria-label",
@@ -115,8 +250,41 @@ function criarItem(tarefa) {
   return item;
 }
 
-export function iniciarInterface({ aoTentarNovamente }) {
-  if (aoTentarNovamente) {
-    el.botaoTentar.addEventListener("click", () => aoTentarNovamente());
-  }
+function itemPorId(id) {
+  return el.lista.querySelector(`.tarefa[data-id="${CSS.escape(String(id))}"]`);
+}
+
+function tituloDoItem(botao) {
+  return botao.closest(".tarefa")?.querySelector(".tarefa__titulo")?.textContent ?? "";
+}
+
+function pedirConfirmacao(botao) {
+  botao.dataset.confirmando = "true";
+  botao.textContent = "Confirmar?";
+  botao.setAttribute("aria-label", "Confirmar exclusão da tarefa");
+
+  const anterior = temporizadores.get(botao);
+  if (anterior) clearTimeout(anterior);
+  temporizadores.set(botao, setTimeout(() => cancelarConfirmacao(botao), 3000));
+
+  botao.addEventListener("blur", () => cancelarConfirmacao(botao), { once: true });
+  botao.addEventListener(
+    "keydown",
+    (evento) => {
+      if (evento.key === "Escape") cancelarConfirmacao(botao);
+    },
+    { once: true },
+  );
+}
+
+function cancelarConfirmacao(botao) {
+  const timer = temporizadores.get(botao);
+  if (timer) clearTimeout(timer);
+  temporizadores.delete(botao);
+
+  if (botao.dataset.confirmando !== "true") return;
+
+  delete botao.dataset.confirmando;
+  botao.textContent = "Excluir";
+  botao.setAttribute("aria-label", `Excluir tarefa: ${tituloDoItem(botao)}`);
 }

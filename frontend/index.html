@@ -101,13 +101,14 @@
   <template id="modelo-tarefa">
     <li class="tarefa">
       <span class="tarefa__check">
-        <input class="tarefa__campo" type="checkbox">
-        <svg class="tarefa__caixa" viewBox="0 0 22 22" aria-hidden="true" focusable="false">
-          <rect x="1" y="1" width="20" height="20" rx="6"></rect>
-          <path class="tarefa__risco" d="M6 11.4l3.4 3.6L16 7.4"></path>
-        </svg>
+        <button class="tarefa__campo" type="button" role="checkbox" aria-checked="false">
+          <svg class="tarefa__caixa" viewBox="0 0 22 22" aria-hidden="true" focusable="false">
+            <rect x="1" y="1" width="20" height="20" rx="6"></rect>
+            <path class="tarefa__risco" d="M6 11.4l3.4 3.6L16 7.4"></path>
+          </svg>
+        </button>
       </span>
-      <span class="tarefa__titulo"></span>
+      <span class="tarefa__texto"><span class="tarefa__titulo"></span></span>
       <button class="tarefa__excluir" type="button">Excluir</button>
     </li>
   </template>

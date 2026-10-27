@@ -223,7 +223,7 @@ input {
 
 .campo::placeholder {
   color: var(--tinta-fraca);
-  opacity: 0.85;
+  opacity: 1;
 }
 
 .campo:hover {
@@ -342,9 +342,8 @@ input {
   pointer-events: none;
 }
 
-/* Checkbox: input real, caixa desenhada em SVG */
+/* Checkbox: botão com role=checkbox e caixa desenhada em SVG */
 .tarefa__check {
-  position: relative;
   display: grid;
   place-items: center;
   width: var(--coluna-check);
@@ -352,12 +351,14 @@ input {
 }
 
 .tarefa__campo {
-  position: absolute;
-  inset: 0;
+  display: grid;
+  place-items: center;
   width: 100%;
   height: 100%;
-  margin: 0;
-  opacity: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--raio);
+  background: none;
   cursor: pointer;
 }
 
@@ -374,17 +375,11 @@ input {
   transition: fill var(--troca), stroke var(--troca);
 }
 
-.tarefa__campo:hover + .tarefa__caixa rect {
+.tarefa__campo:hover .tarefa__caixa rect {
   stroke: var(--oliva);
 }
 
-.tarefa__campo:focus-visible + .tarefa__caixa {
-  outline: 2px solid var(--oliva);
-  outline-offset: 3px;
-  border-radius: var(--raio);
-}
-
-.tarefa__campo:checked + .tarefa__caixa rect {
+.tarefa__campo[aria-checked="true"] .tarefa__caixa rect {
   fill: var(--oliva);
   stroke: var(--oliva);
 }
@@ -404,16 +399,19 @@ input {
   transition: stroke-dashoffset 180ms ease 40ms;
 }
 
-.tarefa__campo:checked + .tarefa__caixa .tarefa__risco {
+.tarefa__campo[aria-checked="true"] .tarefa__risco {
   stroke-dashoffset: 0;
 }
 
 /* Título: o risco cresce da esquerda para a direita e acompanha linhas quebradas. */
-.tarefa__titulo {
+.tarefa__texto {
   min-width: 0;
+  line-height: var(--ritmo);
+}
+
+.tarefa__titulo {
   padding-right: 2px;
   font-size: 17px;
-  line-height: var(--ritmo);
   overflow-wrap: anywhere;
   background-image: linear-gradient(currentColor, currentColor);
   background-repeat: no-repeat;
