@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rascunho — tarefas</title>
+  <meta name="description" content="Uma lista de tarefas com cara de página de caderno.">
+  <meta name="theme-color" content="#f4f0e6">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%234e6032'/%3E%3Cpath d='M11 23V9h5.4a4 4 0 0 1 0 8H11' fill='none' stroke='%23f4f0e6' stroke-width='2.4'/%3E%3C/svg%3E">
+  <script>
+    // Aplica o tema antes da primeira pintura para não piscar a página.
+    (function () {
+      try {
+        var salvo = localStorage.getItem("rascunho:tema");
+        var prefereEscuro = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var valido = salvo === "dark" || salvo === "light";
+        document.documentElement.dataset.theme = valido ? salvo : (prefereEscuro ? "dark" : "light");
+      } catch (erro) {
+        document.documentElement.dataset.theme = "light";
+      }
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..700&family=Instrument+Sans:wght@400..600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="./css/style.css">
+  <script type="module" src="./js/app.js"></script>
+</head>
+<body>
+  <a class="pular" href="#lista">Pular para a lista</a>
+
+  <div class="folha">
+    <header class="cabecalho">
+      <div>
+        <h1 class="titulo">Rascunho<span class="titulo__ponto" aria-hidden="true">.</span></h1>
+        <p class="data" id="data-hoje"></p>
+      </div>
+      <button class="tema" id="botao-tema" type="button" aria-label="Ativar tema escuro" aria-pressed="false">
+        <svg class="tema__icone tema__icone--lua" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20 14.4A8.4 8.4 0 0 1 9.6 4 8.4 8.4 0 1 0 20 14.4Z"></path>
+        </svg>
+        <svg class="tema__icone tema__icone--sol" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2.5v2M12 19.5v2M4.3 4.3l1.4 1.4M18.3 18.3l1.4 1.4M2.5 12h2M19.5 12h2M4.3 19.7l1.4-1.4M18.3 5.7l1.4-1.4"></path>
+        </svg>
+      </button>
+    </header>
+
+    <main>
+      <section class="anotacao" aria-labelledby="rotulo-nova">
+        <h2 class="rotulo" id="rotulo-nova">Nova tarefa</h2>
+        <form class="formulario" id="formulario" novalidate>
+          <div class="formulario__linha">
+            <label class="visualmente-oculto" for="campo-titulo">Título da tarefa</label>
+            <input
+              class="campo"
+              id="campo-titulo"
+              name="titulo"
+              type="text"
+              autocomplete="off"
+              placeholder="ex.: revisar o e-mail de sexta"
+              aria-describedby="aviso-campo">
+            <button class="botao-anotar" id="botao-anotar" type="submit">Anotar</button>
+          </div>
+          <p class="aviso-campo" id="aviso-campo" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="lista-secao" aria-labelledby="rotulo-lista">
+        <div class="lista-topo">
+          <h2 class="rotulo" id="rotulo-lista">Na página</h2>
+          <p class="resumo" id="resumo"></p>
+        </div>
+
+        <p class="aviso-lista" id="aviso-lista" role="alert" hidden></p>
+
+        <div class="pauta">
+          <p class="visualmente-oculto" id="anuncio" role="status" aria-live="polite"></p>
+
+          <ul class="lista esqueleto" id="esqueleto" aria-hidden="true">
+            <li class="esqueleto__linha"><span style="width: 58%"></span></li>
+            <li class="esqueleto__linha"><span style="width: 41%"></span></li>
+            <li class="esqueleto__linha"><span style="width: 68%"></span></li>
+          </ul>
+
+          <p class="vazio" id="vazio" hidden>Nada anotado por aqui.<br>Escreva a primeira linha da lista.</p>
+
+          <div class="erro" id="erro" role="alert" hidden>
+            <p class="erro__texto" id="erro-texto"></p>
+            <button class="botao-tentar" id="botao-tentar" type="button">Tentar novamente</button>
+          </div>
+
+          <ul class="lista" id="lista" aria-label="Tarefas"></ul>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <template id="modelo-tarefa">
+    <li class="tarefa">
+      <span class="tarefa__check">
+        <input class="tarefa__campo" type="checkbox">
+        <svg class="tarefa__caixa" viewBox="0 0 22 22" aria-hidden="true" focusable="false">
+          <rect x="1" y="1" width="20" height="20" rx="6"></rect>
+          <path class="tarefa__risco" d="M6 11.4l3.4 3.6L16 7.4"></path>
+        </svg>
+      </span>
+      <span class="tarefa__titulo"></span>
+      <button class="tarefa__excluir" type="button">Excluir</button>
+    </li>
+  </template>
+
+  <noscript>
+    <p class="noscript">Esta lista precisa de JavaScript. Ative no navegador e recarregue a página.</p>
+  </noscript>
+</body>
+</html>
