@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 app = FastAPI()
@@ -30,3 +30,13 @@ def criar(dados: TarefaEntrada) -> TarefaSaida:
     proximo_id += 1
     tarefas.append(tarefa)
     return tarefa
+
+
+@app.patch("/tarefas/{tarefa_id}/concluir")
+def concluir(tarefa_id: int) -> TarefaSaida:
+    for tarefa in tarefas:
+        if tarefa.id == tarefa_id:
+            tarefa.concluida = True
+            return tarefa
+
+    raise HTTPException(status_code=404, detail="Tarefa não encontrada")
