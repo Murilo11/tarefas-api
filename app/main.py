@@ -40,3 +40,13 @@ def concluir(tarefa_id: int) -> TarefaSaida:
             return tarefa
 
     raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+
+
+@app.delete("/tarefas/{tarefa_id}", status_code=204)
+def deletar(tarefa_id: int) -> None:
+    for tarefa in tarefas:
+        if tarefa.id == tarefa_id:
+            tarefas.remove(tarefa)
+            return
+
+    raise HTTPException(status_code=404, detail="Tarefa não encontrada")
