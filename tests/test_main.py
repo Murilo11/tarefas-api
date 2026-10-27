@@ -77,3 +77,39 @@ def test_deletar_tarefa_inexistente_retorna_404(client):
     resposta = client.delete("/tarefas/999")
 
     assert resposta.status_code == 404
+
+
+# --- Testes de CORS ---
+
+
+def test_cors_origem_permitida_retorna_cabecalho(client):
+    resposta = client.get("/tarefas", headers={"Origin": "http://localhost:5500"})
+
+    assert resposta.status_code == 200
+    assert resposta.headers["access-control-allow-origin"] == "http://localhost:5500"
+
+
+def test_cors_preflight_com_origem_permitida_retorna_200(client):
+    resposta = client.options(
+        "/tarefas",
+        headers={
+            "Origin": "http://localhost:5500",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+
+    assert resposta.status_code == 200
+    assert resposta.headers["access-control-allow-origin"] == "http://localhost:5500"
+    assert "POST" in resposta.headers["access-control-allow-methods"]
+    cabecalhos_permitidos = resposta.headers["access-control-allow-headers"].lower()
+    assert "content-type" in cabecalhos_permitidos
+
+
+def test_cors_origem_nao_permitida_nao_retorna_cabecalho(client):
+    resposta = client.get(
+        "/tarefas", headers={"Origin": "https://site-qualquer.com"}
+    )
+
+    assert resposta.status_code == 200
+    assert "access-control-allow-origin" not in resposta.headers

@@ -1,7 +1,21 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 app = FastAPI()
+
+# Origens do front-end local. Acrescente aqui a URL do Cloudflare Pages após o deploy.
+ORIGENS_PERMITIDAS = [
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ORIGENS_PERMITIDAS,
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
+    allow_headers=["Content-Type"],
+)
 
 
 class TarefaEntrada(BaseModel):
