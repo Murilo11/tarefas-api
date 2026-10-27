@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f4ec">
+  <meta name="description" content="Um espaço simples para organizar suas tarefas.">
+  <title>Entrelinhas — suas tarefas</title>
+  <link rel="stylesheet" href="./css/styles.css">
+  <script src="./js/api.js" defer></script>
+  <script src="./js/app.js" defer></script>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <a class="wordmark" href="./" aria-label="Entrelinhas, início">
+        <span class="wordmark-mark" aria-hidden="true">e.</span>
+        <span>entrelinhas</span>
+      </a>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Ativar tema escuro">
+        <svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20.2 15.1A8.4 8.4 0 0 1 8.9 3.8 8.4 8.4 0 1 0 20.2 15.1Z"></path>
+        </svg>
+        <span id="theme-label">Tema escuro</span>
+      </button>
+    </header>
+
+    <main class="main-content">
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span> SEU ESPAÇO DE TRABALHO</p>
+        <h1 id="page-title">Um passo<br><span>de cada vez.</span></h1>
+        <p class="intro-copy">Tire as ideias da cabeça. Coloque no papel. Siga no seu ritmo.</p>
+      </section>
+
+      <section class="composer-section" aria-labelledby="composer-title">
+        <h2 class="section-kicker" id="composer-title">ANOTE UMA TAREFA</h2>
+        <form class="task-form" id="task-form">
+          <label class="visually-hidden" for="task-title">Título da tarefa</label>
+          <input id="task-title" name="titulo" type="text" maxlength="200" placeholder="O que precisa ser feito?" autocomplete="off" required>
+          <button class="add-button" type="submit">
+            <span>Adicionar</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+          </button>
+        </form>
+        <p class="form-message" id="form-message" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="list-section" aria-labelledby="list-title">
+        <div class="list-heading">
+          <div>
+            <p class="section-kicker">O QUE ESTÁ NA MESA</p>
+            <h2 id="list-title">Sua lista<span class="title-period">.</span></h2>
+          </div>
+          <p class="task-count" id="task-count">Carregando…</p>
+        </div>
+
+        <div class="list-status" id="list-status" role="status" aria-live="polite">Buscando suas tarefas…</div>
+        <ul class="task-list" id="task-list" aria-label="Lista de tarefas"></ul>
+        <div class="empty-state" id="empty-state" hidden>
+          <span class="empty-mark" aria-hidden="true">✳</span>
+          <h3>A página ainda está em branco.</h3>
+          <p>Adicione uma tarefa acima e comece por ela.</p>
+        </div>
+        <p class="list-footnote" id="list-footnote">Pequenos passos também contam.</p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>FEITO PARA IR COM CALMA.</span>
+      <span>ENTRELINHAS <span aria-hidden="true">·</span> TAREFAS</span>
+    </footer>
+  </div>
+  <noscript><p class="noscript">Ative o JavaScript para usar sua lista de tarefas.</p></noscript>
+</body>
+</html>
