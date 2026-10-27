@@ -40,9 +40,7 @@ async function criar(titulo) {
     const tarefa = await api.criarTarefa(titulo);
     estado.tarefas.push(tarefa);
     ui.adicionarTarefa(tarefa, estado.tarefas);
-
-    // Se a pessoa já começou a digitar outra tarefa enquanto a API respondia, não apaga.
-    if (ui.lerTitulo() === titulo) ui.limparCampo();
+    ui.limparCampo();
   } catch (erro) {
     ui.mostrarErroCampo(mensagemDeErro(erro));
   } finally {
