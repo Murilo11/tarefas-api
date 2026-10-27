@@ -1,13 +1,23 @@
 from fastapi import FastAPI
+from pydantic import BaseModel, Field
 
 app = FastAPI()
 
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
+class TarefaEntrada(BaseModel):
+    titulo: str = Field(min_length=1)
 
 
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
+class TarefaSaida(BaseModel):
+    id: int
+    titulo: str
+    concluida: bool = False
+
+
+tarefas: list[TarefaSaida] = []
+proximo_id = 1
+
+
+@app.get("/tarefas")
+def listar() -> list[TarefaSaida]:
+    return tarefas
