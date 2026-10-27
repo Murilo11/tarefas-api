@@ -89,6 +89,18 @@ def test_cors_origem_permitida_retorna_cabecalho(client):
     assert resposta.headers["access-control-allow-origin"] == "http://localhost:5500"
 
 
+def test_cors_origem_do_pages_recebe_cabecalho(client):
+    resposta = client.get(
+        "/tarefas", headers={"Origin": "https://rascunho-tarefas.pages.dev"}
+    )
+
+    assert resposta.status_code == 200
+    assert (
+        resposta.headers["access-control-allow-origin"]
+        == "https://rascunho-tarefas.pages.dev"
+    )
+
+
 def test_cors_preflight_com_origem_permitida_retorna_200(client):
     resposta = client.options(
         "/tarefas",
