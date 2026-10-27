@@ -4,10 +4,11 @@ from pydantic import BaseModel, Field
 
 app = FastAPI()
 
-# Origens do front-end local. Acrescente aqui a URL do Cloudflare Pages após o deploy.
+# Origens do front-end: local e a URL do site no Cloudflare Pages.
 ORIGENS_PERMITIDAS = [
     "http://localhost:5500",
     "http://127.0.0.1:5500",
+    "https://rascunho-tarefas.pages.dev",
 ]
 
 app.add_middleware(
