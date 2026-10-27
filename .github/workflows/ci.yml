@@ -28,3 +28,42 @@ jobs:
 
       - name: Rodar os testes com pytest
         run: pytest -v
+
+  front:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar o Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verificar a sintaxe do JavaScript do front
+        # Os arquivos usam ES Modules em .js, então o --check precisa rodar
+        # com --input-type=module.
+        run: |
+          for arquivo in frontend/js/*.js; do
+            echo "Verificando $arquivo"
+            node --input-type=module --check < "$arquivo"
+          done
+
+  deploy-front:
+    needs: [test, front]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - name: Baixar o código do repositório
+        uses: actions/checkout@v4
+
+      - name: Publicar o front no Cloudflare Pages
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          command: pages deploy frontend --project-name=rascunho-tarefas --branch=main
