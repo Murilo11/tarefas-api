@@ -18,7 +18,7 @@ O projeto também serve de exercício de fluxo de trabalho: todo o código passo
 
 | Parte | Tecnologias |
 |---|---|
-| API | Python, FastAPI, Pydantic, Uvicorn |
+| API | Python, FastAPI, Pydantic, Uvicorn, SQLAlchemy, SQLite |
 | Testes e qualidade | pytest, httpx, ruff |
 | Front-end | HTML, CSS e JavaScript (ES Modules), sem dependências |
 | Integração contínua | GitHub Actions |
@@ -52,6 +52,8 @@ uvicorn app.main:app --reload
 ```
 
 A API fica em `http://127.0.0.1:8000`. A documentação interativa gerada pelo FastAPI está em `http://127.0.0.1:8000/docs`.
+
+Os dados ficam salvos em `tarefas.db`, na raiz do projeto.
 
 ### Executar o front-end
 
@@ -142,13 +144,11 @@ feature/*  ->  develop  ->  main
 
 ## Limitações conhecidas
 
-- As tarefas ficam guardadas em memória: ao reiniciar a API, todas são perdidas.
 - A API não permite desmarcar nem editar uma tarefa, então a interface também não oferece isso.
 - Não há autenticação nem usuários.
 
 ## Próximos passos
 
-- Persistir os dados em um banco
 - Permitir editar e desmarcar tarefas
 
 ## Autor
