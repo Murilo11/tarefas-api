@@ -136,3 +136,19 @@ def test_cors_origem_nao_permitida_nao_retorna_cabecalho(client):
 
     assert resposta.status_code == 200
     assert "access-control-allow-origin" not in resposta.headers
+
+
+def test_cabecalhos_de_seguranca_em_resposta_de_sucesso(client):
+    resposta = client.get("/tarefas")
+
+    assert resposta.status_code == 200
+    assert resposta.headers["x-content-type-options"] == "nosniff"
+    assert resposta.headers["cross-origin-resource-policy"] == "cross-origin"
+
+
+def test_cabecalhos_de_seguranca_em_resposta_de_erro(client):
+    resposta = client.patch("/tarefas/999/concluir")
+
+    assert resposta.status_code == 404
+    assert resposta.headers["x-content-type-options"] == "nosniff"
+    assert resposta.headers["cross-origin-resource-policy"] == "cross-origin"
