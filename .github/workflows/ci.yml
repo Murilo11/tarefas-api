@@ -49,8 +49,103 @@ jobs:
             node --input-type=module --check < "$arquivo"
           done
 
+  sast:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Baixar o código do repositório
+        uses: actions/checkout@v4
+
+      - name: Criar o diretório dos relatórios
+        run: mkdir -p security
+
+      - name: Analisar o código com Semgrep
+        run: |
+          docker run --rm \
+            -v "$PWD:/src" \
+            -w /src \
+            semgrep/semgrep:1.185.0@sha256:67518c174185a2043fdbed16c70631b79209499b3671178e7194379b48295a0d \
+            semgrep scan \
+              --config p/default \
+              --severity ERROR \
+              --error \
+              --sarif \
+              --output security/semgrep.sarif
+
+      - name: Publicar o relatório SARIF no Code Scanning
+        if: always() && hashFiles('security/semgrep.sarif') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: security/semgrep.sarif
+          category: semgrep
+
+  dast:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Baixar o código do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar o Python 3.13 com cache do pip
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Instalar as dependências de produção
+        run: pip install -r requirements.txt
+
+      - name: Iniciar a API
+        run: |
+          nohup uvicorn app.main:app \
+            --host 127.0.0.1 \
+            --port 8000 \
+            > uvicorn.log 2>&1 &
+
+          echo $! > uvicorn.pid
+
+      - name: Aguardar a API ficar disponível
+        run: |
+          pronto=0
+
+          for tentativa in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/openapi.json \
+              > /dev/null; then
+              pronto=1
+              break
+            fi
+
+            sleep 2
+          done
+
+          if [ "$pronto" != "1" ]; then
+            cat uvicorn.log
+            exit 1
+          fi
+
+      - name: Rodar o OWASP ZAP API Scan
+        uses: zaproxy/action-api-scan@5158fe4d9d8fcc75ea204db81317cce7f9e5453d # v0.10.0
+        with:
+          target: http://127.0.0.1:8000/openapi.json
+          format: openapi
+          fail_action: true
+          allow_issue_writing: false
+          artifact_name: zap-api-scan
+
+      - name: Encerrar a API
+        if: always()
+        run: |
+          if [ -f uvicorn.pid ]; then
+            kill "$(cat uvicorn.pid)" || true
+          fi
+
   deploy-front:
-    needs: [test, front]
+    needs: [test, front, sast, dast]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:

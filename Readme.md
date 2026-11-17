@@ -130,6 +130,32 @@ A pipeline (`.github/workflows/ci.yml`) roda no GitHub Actions a cada push e a c
 4. Roda o linter (`ruff check .`)
 5. Roda os testes (`pytest -v`)
 
+O job `front` verifica a sintaxe dos arquivos JavaScript, e os jobs `sast` e `dast` fazem as verificações de segurança descritas abaixo.
+
+## Segurança da esteira CI/CD
+
+A pipeline tem duas verificações de segurança obrigatórias. Elas rodam em paralelo com os jobs `test` e `front`, e o deploy do frontend só acontece se todas forem aprovadas.
+
+### SAST — Semgrep
+
+SAST (Static Application Security Testing) é a análise estática do código, feita sem executar a aplicação. O job `sast` roda o Semgrep Community Edition em um container Docker com a versão da imagem fixada por digest e analisa o código Python em busca de padrões inseguros.
+
+A configuração de regras usada é a `p/default`, que reúne regras da comunidade para diversas linguagens e frameworks. Apenas achados de severidade `ERROR` bloqueiam a pipeline: o comando roda com `--severity ERROR` e `--error`, então qualquer achado dessa severidade faz o job falhar.
+
+O relatório é gerado em formato SARIF e enviado ao GitHub Code Scanning. Para consultá-lo, acesse a aba **Security** do repositório e depois **Code scanning alerts**. A publicação do relatório usa `continue-on-error: true`, para que uma falha no upload não esconda o resultado do scanner.
+
+### DAST — OWASP ZAP
+
+DAST (Dynamic Application Security Testing) é a análise dinâmica: a aplicação é executada e testada como um cliente faria. O job `dast` instala as dependências de produção, inicia a API com Uvicorn em `127.0.0.1:8000` e aguarda o endpoint `/openapi.json` responder antes de começar.
+
+O OWASP ZAP API Scan usa a especificação OpenAPI gerada pelo FastAPI para descobrir as rotas e os métodos disponíveis (GET, POST, PATCH e DELETE) e testar cada operação. A opção `fail_action: true` faz o job falhar quando o scanner encontra alertas conforme a política configurada.
+
+Os testes rodam apenas contra a API iniciada no runner do GitHub Actions, em ambiente isolado e descartável, sem apontar para a API de produção nem usar dados reais. O relatório do ZAP fica disponível como artefato da execução, com o nome `zap-api-scan`, na página da execução em **Actions**.
+
+### Integração com o deploy
+
+O job `deploy-front` depende de `test`, `front`, `sast` e `dast`. Assim, o deploy no Cloudflare Pages só ocorre em push para a branch `main` e somente se todas essas verificações forem aprovadas. Pull Requests e pushes em `develop` executam as verificações, mas não publicam o frontend.
+
 O fluxo de branches segue o gitflow simplificado:
 
 ```
