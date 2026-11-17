@@ -3,5 +3,9 @@
 __pycache__/
 .pytest_cache/
 .ruff_cache/
+<<<<<<<<< Temporary merge branch 1
 *.db
+=========
+tarefas.db
 plan.md
+>>>>>>>>> Temporary merge branch 2
