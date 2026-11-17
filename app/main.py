@@ -1,8 +1,22 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from contextlib import asynccontextmanager
+from typing import Annotated
 
-app = FastAPI()
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy.orm import Session
+
+from app.database import Base, engine, get_db
+from app.models import Tarefa
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 # Origens do front-end: local e a URL do site no Cloudflare Pages.
 ORIGENS_PERMITIDAS = [
@@ -19,49 +33,57 @@ app.add_middleware(
 )
 
 
+@app.middleware("http")
+async def adicionar_cabecalhos_de_seguranca(request: Request, call_next):
+    resposta = await call_next(request)
+    resposta.headers["X-Content-Type-Options"] = "nosniff"
+    resposta.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
+    return resposta
+
+
 class TarefaEntrada(BaseModel):
     titulo: str = Field(min_length=1)
 
 
 class TarefaSaida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     titulo: str
     concluida: bool = False
 
 
-tarefas: list[TarefaSaida] = []
-proximo_id = 1
-
-
 @app.get("/tarefas")
-def listar() -> list[TarefaSaida]:
-    return tarefas
+def listar(db:Annotated [Session,Depends(get_db)]) -> list[TarefaSaida]:
+    return db.query(Tarefa).all()
 
 
 @app.post("/tarefas", status_code=201)
-def criar(dados: TarefaEntrada) -> TarefaSaida:
-    global proximo_id
-    tarefa = TarefaSaida(id=proximo_id, titulo=dados.titulo)
-    proximo_id += 1
-    tarefas.append(tarefa)
+def criar(dados: TarefaEntrada, db: Annotated [Session, Depends(get_db)]) -> TarefaSaida:
+    tarefa = Tarefa(titulo=dados.titulo)
+    db.add(tarefa)
+    db.commit()
+    db.refresh(tarefa)
     return tarefa
 
 
 @app.patch("/tarefas/{tarefa_id}/concluir")
-def concluir(tarefa_id: int) -> TarefaSaida:
-    for tarefa in tarefas:
-        if tarefa.id == tarefa_id:
-            tarefa.concluida = True
-            return tarefa
+def concluir(tarefa_id: int, db: Annotated [Session, Depends(get_db)]) -> TarefaSaida:
+    tarefa = db.get(Tarefa, tarefa_id)
+    if tarefa is None:
+        raise HTTPException(status_code=404, detail="Tarefa não encontrada")
 
-    raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+    tarefa.concluida = True
+    db.commit()
+    db.refresh(tarefa)
+    return tarefa
 
 
 @app.delete("/tarefas/{tarefa_id}", status_code=204)
-def deletar(tarefa_id: int) -> None:
-    for tarefa in tarefas:
-        if tarefa.id == tarefa_id:
-            tarefas.remove(tarefa)
-            return
+def deletar(tarefa_id: int, db: Annotated [Session, Depends(get_db)]) -> None:
+    tarefa = db.get(Tarefa, tarefa_id)
+    if tarefa is None:
+        raise HTTPException(status_code=404, detail="Tarefa não encontrada")
 
-    raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+    db.delete(tarefa)
+    db.commit()

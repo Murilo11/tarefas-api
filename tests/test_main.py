@@ -1,20 +1,31 @@
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
-from app import main
+from app.database import Base, get_db
 from app.main import app
 
 
-@pytest.fixture(autouse=True)
-def limpar_estado(monkeypatch):
-    """Zera a lista e o contador antes de cada teste, para isolar os cenários."""
-    main.tarefas.clear()
-    monkeypatch.setattr(main, "proximo_id", 1)
-
-
 @pytest.fixture
-def client():
-    return TestClient(app)
+def client(tmp_path):
+    url = f"sqlite:///{tmp_path / 'teste.db'}"
+    engine = create_engine(url, connect_args={"check_same_thread": False})
+    SessionTeste = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base.metadata.create_all(bind=engine)
+
+    def override_get_db():
+        db = SessionTeste()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
+
 
 
 def test_listar_tarefas_quando_vazio_retorna_lista_vazia(client):
@@ -125,3 +136,19 @@ def test_cors_origem_nao_permitida_nao_retorna_cabecalho(client):
 
     assert resposta.status_code == 200
     assert "access-control-allow-origin" not in resposta.headers
+
+
+def test_cabecalhos_de_seguranca_em_resposta_de_sucesso(client):
+    resposta = client.get("/tarefas")
+
+    assert resposta.status_code == 200
+    assert resposta.headers["x-content-type-options"] == "nosniff"
+    assert resposta.headers["cross-origin-resource-policy"] == "cross-origin"
+
+
+def test_cabecalhos_de_seguranca_em_resposta_de_erro(client):
+    resposta = client.patch("/tarefas/999/concluir")
+
+    assert resposta.status_code == 404
+    assert resposta.headers["x-content-type-options"] == "nosniff"
+    assert resposta.headers["cross-origin-resource-policy"] == "cross-origin"

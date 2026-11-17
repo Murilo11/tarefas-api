@@ -18,7 +18,7 @@ O projeto também serve de exercício de fluxo de trabalho: todo o código passo
 
 | Parte | Tecnologias |
 |---|---|
-| API | Python, FastAPI, Pydantic, Uvicorn |
+| API | Python, FastAPI, Pydantic, Uvicorn, SQLAlchemy, SQLite |
 | Testes e qualidade | pytest, httpx, ruff |
 | Front-end | HTML, CSS e JavaScript (ES Modules), sem dependências |
 | Integração contínua | GitHub Actions |
@@ -52,6 +52,8 @@ uvicorn app.main:app --reload
 ```
 
 A API fica em `http://127.0.0.1:8000`. A documentação interativa gerada pelo FastAPI está em `http://127.0.0.1:8000/docs`.
+
+Os dados ficam salvos em `tarefas.db`, na raiz do projeto.
 
 ### Executar o front-end
 
@@ -152,6 +154,8 @@ O OWASP ZAP API Scan usa a especificação OpenAPI gerada pelo FastAPI para desc
 
 Os testes rodam apenas contra a API iniciada no runner do GitHub Actions, em ambiente isolado e descartável, sem apontar para a API de produção nem usar dados reais. O relatório do ZAP fica disponível como artefato da execução, com o nome `zap-api-scan`, na página da execução em **Actions**.
 
+Para atender aos alertas de cabeçalhos do ZAP, a API envia `X-Content-Type-Options: nosniff` e `Cross-Origin-Resource-Policy: cross-origin` em todas as respostas.
+
 ### Integração com o deploy
 
 O job `deploy-front` depende de `test`, `front`, `sast` e `dast`. Assim, o deploy no Cloudflare Pages só ocorre em push para a branch `main` e somente se todas essas verificações forem aprovadas. Pull Requests e pushes em `develop` executam as verificações, mas não publicam o frontend.
@@ -168,13 +172,11 @@ feature/*  ->  develop  ->  main
 
 ## Limitações conhecidas
 
-- As tarefas ficam guardadas em memória: ao reiniciar a API, todas são perdidas.
 - A API não permite desmarcar nem editar uma tarefa, então a interface também não oferece isso.
 - Não há autenticação nem usuários.
 
 ## Próximos passos
 
-- Persistir os dados em um banco
 - Permitir editar e desmarcar tarefas
 
 ## Autor
