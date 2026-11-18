@@ -33,12 +33,7 @@ app.add_middleware(
 )
 
 
-@app.middleware("http")
-async def adicionar_cabecalhos_de_seguranca(request: Request, call_next):
-    resposta = await call_next(request)
-    resposta.headers["X-Content-Type-Options"] = "nosniff"
-    resposta.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
-    return resposta
+
 
 
 class TarefaEntrada(BaseModel):
