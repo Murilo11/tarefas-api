@@ -30,6 +30,7 @@ jobs:
         run: pytest -v
 
   front:
+    needs: [test]
     runs-on: ubuntu-latest
     steps:
       - name: Baixar o código do repositório
@@ -50,6 +51,7 @@ jobs:
           done
 
   sast:
+    needs: [front]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -83,6 +85,7 @@ jobs:
           category: semgrep
 
   dast:
+    needs: [sast]
     runs-on: ubuntu-latest
     permissions:
       contents: read
